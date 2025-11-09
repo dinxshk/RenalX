@@ -41,8 +41,10 @@ export class MemStorage implements IStorage {
   async createTest(insertTest: InsertUrinalysisTest): Promise<UrinalysisTest> {
     const id = randomUUID();
     const test: UrinalysisTest = {
-      ...insertTest,
       id,
+      imageUrl: insertTest.imageUrl ?? null,
+      results: insertTest.results,
+      summary: insertTest.summary,
       testDate: new Date(),
     };
     this.tests.set(id, test);
