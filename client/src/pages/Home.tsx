@@ -10,7 +10,7 @@ import TestHistory, { TestHistoryItem } from "@/components/TestHistory";
 import Header from "@/components/Header";
 import { Loader2, FileCheck } from "lucide-react";
 import sampleDipstickImage from "@assets/IMG_20251109_102721_1762675147625.jpg";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 
 interface UrinalysisTest {
   id: string;
@@ -77,9 +77,10 @@ export default function Home() {
       formData.append('results', JSON.stringify(sampleResults));
       formData.append('summary', summary);
 
-      const response = await apiRequest('/api/tests', {
+      const response = await fetch('/api/tests', {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
 
       if (!response.ok) {
