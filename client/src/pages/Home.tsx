@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
 import TestResults, { TestParameter } from "@/components/TestResults";
 import ParameterGuide from "@/components/ParameterGuide";
@@ -8,13 +10,27 @@ import TestHistory, { TestHistoryItem } from "@/components/TestHistory";
 import Header from "@/components/Header";
 import { Loader2, FileCheck } from "lucide-react";
 import sampleDipstickImage from "@assets/IMG_20251109_102721_1762675147625.jpg";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+
+interface UrinalysisTest {
+  id: string;
+  imageUrl: string | null;
+  results: TestParameter[];
+  testDate: string;
+  summary: string;
+}
 
 export default function Home() {
   const [currentImage, setCurrentImage] = useState<string>();
+  const [currentFile, setCurrentFile] = useState<File>();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [testResults, setTestResults] = useState<TestParameter[] | null>(null);
   const [testDate, setTestDate] = useState<Date>();
-  const [testHistory, setTestHistory] = useState<TestHistoryItem[]>([]);
+  const { toast } = useToast();
+
+  const { data: testHistory = [] } = useQuery<UrinalysisTest[]>({
+    queryKey: ['/api/tests'],
+  });
 
   const sampleResults: TestParameter[] = [
     { code: 'L', name: 'Leukocyte', result: 'Negative', isNormal: true },
@@ -31,49 +47,104 @@ export default function Home() {
 
   const handleImageSelected = (file: File, preview: string) => {
     setCurrentImage(preview);
+    setCurrentFile(file);
     setTestResults(null);
     console.log('Image selected:', file.name);
   };
 
   const handleClearImage = () => {
     setCurrentImage(undefined);
+    setCurrentFile(undefined);
     setTestResults(null);
     console.log('Image cleared');
   };
 
   const handleAnalyzeImage = async () => {
+    if (!currentFile) return;
+
     setIsAnalyzing(true);
     console.log('Analyzing image...');
     
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setTestResults(sampleResults);
-    const now = new Date();
-    setTestDate(now);
-    
-    setTestHistory(prev => [{
-      id: Date.now().toString(),
-      date: now,
-      imageThumbnail: currentImage,
-      summary: 'Test completed - 9 normal, 1 abnormal'
-    }, ...prev]);
-    
-    setIsAnalyzing(false);
-    console.log('Analysis complete');
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const normalCount = sampleResults.filter(r => r.isNormal).length;
+      const abnormalCount = sampleResults.length - normalCount;
+      const summary = `Test completed - ${normalCount} normal, ${abnormalCount} abnormal`;
+
+      const formData = new FormData();
+      formData.append('image', currentFile);
+      formData.append('results', JSON.stringify(sampleResults));
+      formData.append('summary', summary);
+
+      const response = await apiRequest('/api/tests', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save test results');
+      }
+
+      const savedTest = await response.json();
+      
+      setTestResults(sampleResults);
+      setTestDate(new Date(savedTest.testDate));
+      
+      await queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      
+      toast({
+        title: "Analysis Complete",
+        description: "Test results have been saved successfully.",
+      });
+      
+      console.log('Analysis complete');
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Failed to analyze the image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleLoadSample = () => {
-    setCurrentImage(sampleDipstickImage);
-    setTestResults(null);
-    console.log('Sample image loaded');
+    fetch(sampleDipstickImage)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], "sample-dipstick.jpg", { type: "image/jpeg" });
+        setCurrentFile(file);
+        setCurrentImage(sampleDipstickImage);
+        setTestResults(null);
+        console.log('Sample image loaded');
+      })
+      .catch(err => {
+        console.error('Failed to load sample:', err);
+        toast({
+          title: "Error",
+          description: "Failed to load sample image",
+          variant: "destructive",
+        });
+      });
   };
 
   const handleNewTest = () => {
     setCurrentImage(undefined);
+    setCurrentFile(undefined);
     setTestResults(null);
     setTestDate(undefined);
     console.log('Starting new test');
   };
+
+  const historyItems: TestHistoryItem[] = testHistory.map(test => ({
+    id: test.id,
+    date: new Date(test.testDate),
+    imageThumbnail: test.imageUrl || undefined,
+    summary: test.summary,
+  }));
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -88,7 +159,7 @@ export default function Home() {
           </TabsList>
 
           <TabsContent value="test" className="space-y-6">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <h2 className="text-2xl font-semibold" data-testid="text-page-title">
                 Dipstick Analysis
               </h2>
@@ -148,7 +219,7 @@ export default function Home() {
 
           <TabsContent value="history">
             <TestHistory
-              tests={testHistory}
+              tests={historyItems}
               onSelectTest={(id) => console.log('View test:', id)}
             />
           </TabsContent>
