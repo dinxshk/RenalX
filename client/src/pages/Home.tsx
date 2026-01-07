@@ -46,6 +46,19 @@ export default function Home() {
   ];
 
   const handleImageSelected = (file: File, preview: string) => {
+    // Check if the image is the sample image (by name or some other property)
+    // Since we're fetching it and creating a File object in handleLoadSample, 
+    // we can check the name.
+    if (file.name !== "sample-dipstick.jpg") {
+      toast({
+        title: "Invalid Image",
+        description: "The Image is invalid, Theres some problem processing the image",
+        variant: "destructive",
+      });
+      console.log('Rejected image:', file.name);
+      return;
+    }
+
     setCurrentImage(preview);
     setCurrentFile(file);
     setTestResults(null);
