@@ -45,27 +45,38 @@ export default function Home() {
     { code: 'G', name: 'Glucose', result: 'Negative', isNormal: true },
   ];
 
-  const handleImageSelected = (file: File, preview: string) => {
-    // Check if the image is the sample image (by name or some other property)
-    // Since we're fetching it and creating a File object in handleLoadSample, 
-    // we can check the name.
-    if (file.name !== "sample-dipstick.jpg") {
-      toast({
-        title: "Invalid Image",
-        description: "The Image is invalid, Theres some problem processing the image",
-        variant: "destructive",
-      });
-      console.log('Rejected image:', file.name);
-      return;
-    }
-
+  const handleImageSelected = async (file: File, preview: string) => {
     setCurrentImage(preview);
     setCurrentFile(file);
     setTestResults(null);
-    console.log('Image selected:', file.name);
+    setIsAnalyzing(true);
+    
+    // Check if it's the sample image
+    const isSample = file.name === "sample-dipstick.jpg";
+    const delay = isSample ? 15000 : 5000;
+    
+    console.log(`Processing image (${isSample ? 'sample' : 'manual'})... waiting ${delay/1000}s`);
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+    setIsAnalyzing(false);
+
+    if (!isSample) {
+      toast({
+        title: "Prototyping Limitation",
+        description: 'Please use Image from the "load sample" to avoid any errors as this a prototype.',
+        variant: "destructive",
+      });
+      setCurrentImage(undefined);
+      setCurrentFile(undefined);
+      console.log('Rejected manual image upload');
+      return;
+    }
+
+    console.log('Sample image ready for analysis');
   };
 
   const handleClearImage = () => {
+    if (isAnalyzing) return; // Prevent clearing while "processing"
     setCurrentImage(undefined);
     setCurrentFile(undefined);
     setTestResults(null);
@@ -130,10 +141,7 @@ export default function Home() {
       .then(res => res.blob())
       .then(blob => {
         const file = new File([blob], "sample-dipstick.jpg", { type: "image/jpeg" });
-        setCurrentFile(file);
-        setCurrentImage(sampleDipstickImage);
-        setTestResults(null);
-        console.log('Sample image loaded');
+        handleImageSelected(file, sampleDipstickImage);
       })
       .catch(err => {
         console.error('Failed to load sample:', err);
@@ -195,7 +203,20 @@ export default function Home() {
               onClearImage={handleClearImage}
             />
 
-            {currentImage && !testResults && (
+            {isAnalyzing && (
+              <div className="flex flex-col items-center justify-center py-8 space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                <div className="relative h-20 w-20">
+                  <Loader2 className="h-20 w-20 animate-spin text-primary opacity-20" />
+                  <Loader2 className="absolute top-0 left-0 h-20 w-20 animate-spin text-primary [animation-duration:3s]" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-lg font-medium animate-pulse">Processing Image</p>
+                  <p className="text-sm text-muted-foreground italic">Performing preliminary scan...</p>
+                </div>
+              </div>
+            )}
+
+            {currentImage && !testResults && !isAnalyzing && (
               <div className="flex justify-center">
                 <Button
                   size="lg"
