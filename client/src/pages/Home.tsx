@@ -40,7 +40,7 @@ export default function Home() {
     { code: 'PH', name: 'pH', result: '6.0', isNormal: true },
     { code: 'B', name: 'Blood', result: 'Negative', isNormal: true },
     { code: 'S', name: 'Specific Gravity', result: '1.020', isNormal: true },
-    { code: 'K', name: 'Ketone', result: '80 (8.0)', isNormal: false },
+    { code: 'K', name: 'Ketone', result: '80(8.0)', isNormal: false },
     { code: 'Bi', name: 'Bilirubin', result: 'Negative', isNormal: true },
     { code: 'G', name: 'Glucose', result: 'Negative', isNormal: true },
   ];
