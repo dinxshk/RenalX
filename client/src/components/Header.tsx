@@ -1,6 +1,7 @@
-import { Activity, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import renalXLogo from "@assets/RenalX_1779276596000.jpg";
 
 export default function Header() {
   const [darkMode, setDarkMode] = useState(false);
@@ -24,10 +25,20 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b bg-background">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
-          <Activity className="h-6 w-6 text-primary" data-testid="icon-logo" />
-          <h1 className="text-lg font-semibold md:text-xl" data-testid="text-app-title">
-            Urinalysis Test
-          </h1>
+          <img
+            src={renalXLogo}
+            alt="RenalX Logo"
+            className="h-9 w-9 object-contain"
+            data-testid="img-logo"
+          />
+          <div className="flex flex-col leading-tight">
+            <span className="text-lg font-bold tracking-tight text-primary" data-testid="text-app-title">
+              RenalX
+            </span>
+            <span className="text-[10px] text-muted-foreground leading-none tracking-wide uppercase">
+              Urinalysis
+            </span>
+          </div>
         </div>
         <Button
           size="icon"

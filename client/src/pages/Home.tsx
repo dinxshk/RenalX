@@ -206,11 +206,11 @@ export default function Home() {
             {isAnalyzing && (
               <div className="flex flex-col items-center justify-center py-8 space-y-4 animate-in fade-in slide-in-from-bottom-4">
                 <div className="relative h-20 w-20">
-                  <Loader2 className="h-20 w-20 animate-spin text-primary opacity-20" />
+                  <Loader2 className="h-20 w-20 animate-spin text-accent opacity-30" />
                   <Loader2 className="absolute top-0 left-0 h-20 w-20 animate-spin text-primary [animation-duration:3s]" />
                 </div>
                 <div className="text-center space-y-1">
-                  <p className="text-lg font-medium animate-pulse">Processing Image</p>
+                  <p className="text-lg font-medium animate-pulse text-primary">Processing Image</p>
                   <p className="text-sm text-muted-foreground italic">Performing preliminary scan...</p>
                 </div>
               </div>
@@ -267,7 +267,7 @@ export default function Home() {
 
       <footer className="border-t py-4">
         <div className="container max-w-4xl mx-auto px-4 text-center text-sm text-muted-foreground" data-testid="text-footer">
-          Professional urinalysis dipstick testing with AI-powered analysis
+          RenalX &mdash; Professional urinalysis dipstick testing
         </div>
       </footer>
     </div>
